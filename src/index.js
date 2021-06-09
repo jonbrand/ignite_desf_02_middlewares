@@ -9,20 +9,79 @@ app.use(cors());
 
 const users = [];
 
+// middleware para verificar a existencia do usuario
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  
+  const { username } = request.headers;
+
+  const user = users.find(user => user.username === username);
+
+  if(!user) {
+    return response.status(404).json({ error: "User not found"});
+  }
+
+  request.user = user;
+
+  return next();
 }
 
+// middleware para verificar se o usuário pode criar mais um todo
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+  
+  const { user } = request;
+
+  if (!user.pro) {
+    if (user.todos.length > 9) {
+      return response.status(403).json({ error: "You've exceeded everyone's limit on the free plan!"})
+    }
+  }
+
+  return next();
 }
 
+// middleware para verificar a existência de Todo
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+
+  const { username } = request.headers;
+
+  const { id } = request.params;
+
+  const user = users.find(user => user.username === username);
+
+  if (!user) {
+    return response.status(404).json({ error: "User not found"});
+  };
+
+  if (!validate(id)) {
+    return response.status(400).json({ error: "The id must be of type uuidv4"})
+  };
+
+  const checkIdTodo = user.todos.find(todo => todo.id === id);
+
+  if (!checkIdTodo) {
+    return response.status(404).json({ error: "Todo not found"})
+  }
+
+  request.user = user;
+  request.todo = checkIdTodo;
+
+  return next();
 }
 
+// middleware para verificar o usuário pelo id
 function findUserById(request, response, next) {
-  // Complete aqui
+  
+  const { id } = request.params;
+
+  const user = users.find(user => user.id === id);
+
+  if (!user) {
+    return response.status(404).json({ error: "User not found"});
+  };
+
+  request.user = user;
+
+  return next();
 }
 
 app.post('/users', (request, response) => {
